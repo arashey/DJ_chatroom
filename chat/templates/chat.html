@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت روم‌ها</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+            direction: rtl;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar {
+            width: 25%;
+            background: linear-gradient(135deg, #3498db, #8e44ad);
+            padding: 30px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .sidebar input {
+            width: 90%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            outline: none;
+            font-size: 1em;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
+        .sidebar ul li {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar ul li:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .chat-room {
+            width: 75%;
+            padding: 30px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            border-radius: 0 20px 20px 0;
+        }
+
+        .chat-room h2 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .chat-room ul {
+            list-style: none;
+            padding: 0;
+            height: 75%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message-card {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            max-width: 80%;
+            transition: all 0.3s ease;
+        }
+
+        .message-card.sent {
+            background-color: #e3f9e5; /* رنگ سبز برای پیام‌های ارسال‌شده */
+            align-self: flex-end;
+        }
+
+        .message-card.received {
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            align-self: flex-start;
+        }
+
+        .message-card .sender {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .message-card .content {
+            margin-top: 8px;
+            font-size: 1em;
+            color: #444;
+        }
+
+        .message-card .timestamp {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .message-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .message-form textarea {
+            width: 90%;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            resize: none;
+            font-size: 1em;
+        }
+
+        .message-form button {
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 25px;
+            border: none;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .message-form button:hover {
+            background-color: #2980b9;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+        
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- سایدبار -->
+        <div class="sidebar">
+            <h2>روم‌ها</h2>
+            <input type="text" id="searchInput" placeholder="جستجوی روم...">
+            <ul id="room-list">
+                {% if rooms %}
+                    {% for room in rooms %}
+                        <li data-room="{{ room.name }}">
+                            <a href="#" onclick="loadRoom({{ room.id|escapejs }}); return false;">{{ room.name }}</a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <p>هیچ روم چتی در دسترس نیست</p>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- چت روم -->
+        <div class="chat-room">
+            <h2>پیام‌ها</h2>
+            <ul id="messages">
+                {% if messages %}
+                    {% for message in messages %}
+                        <li class="message-card {% if message.sender.username == user.username %}sent{% else %}received{% endif %}">
+                            <span class="sender">{{ message.sender.username }}:</span>
+                            <span class="content">{{ message.content }}</span>
+                            <span class="timestamp">{{ message.timestamp|date:"H:i" }}</span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <p>هیچ پیامی در دسترس نیست</p>
+                {% endif %}
+            </ul>
+
+            <div class="message-form">
+                <h3>ارسال پیام</h3>
+                <form id="messageForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="room_id" name="room" value="{% if rooms and rooms.first %}{{ rooms.first.id }}{% endif %}">
+                    <textarea id="content" name="content" placeholder="پیام خود را تایپ کنید..." required></textarea>
+                    <button type="submit">ارسال</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function scrollToBottom() {
+            const messagesList = document.getElementById('messages');
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+        
+
+
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp); // تبدیل رشته تاریخ به شیء تاریخ
+            const hours = date.getHours().toString().padStart(2, '0'); // ساعت
+            const minutes = date.getMinutes().toString().padStart(2, '0'); // دقیقه
+            return `${hours}:${minutes}`; // فرمت ساعت:دقیقه
+        }
+
+        // جستجوی روم‌ها
+        const searchInput = document.getElementById('searchInput');
+        const roomList = document.getElementById('room-list');
+        const roomItems = roomList.querySelectorAll('li');
+    
+        searchInput.addEventListener('input', function () {
+            const query = searchInput.value.toLowerCase();
+    
+            roomItems.forEach(item => {
+                const roomName = item.getAttribute('data-room').toLowerCase();
+                if (roomName.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    
+        // بارگذاری پیام‌ها بر اساس روم
+        function loadRoom(roomId) {
+            const messagesList = document.getElementById('messages');
+            // ابتدا پیام‌های قبلی را پاک کنیم
+            messagesList.innerHTML = '';
+    
+            fetch(`/api/messages/by-room/${roomId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // اضافه کردن پیام‌ها به لیست
+                    data.forEach(message => {
+                        const newMessage = document.createElement('li');
+                        newMessage.classList.add('message-card', message.sender.username === '{{ user.username }}' ? 'sent' : 'received');
+                        newMessage.innerHTML = `
+                            <span class="sender">${message.sender.username}:</span>
+                            <span class="content">${message.content}</span>
+                            <span class="timestamp">${message.timestamp}</span>
+                        `;
+                        messagesList.appendChild(newMessage);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    
+                        // فرم ارسال پیام
+        document.getElementById('messageForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const roomId = document.getElementById('room_id').value;
+            const content = document.getElementById('content').value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('/api/messages/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    room: roomId,
+                    content: content,
+                }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log('Response Data:', data);
+                if (data && data.id) {
+                    // اضافه کردن پیام جدید به لیست پیام‌ها
+                    const messagesList = document.getElementById('messages');
+                    const newMessage = document.createElement('li');
+                    newMessage.classList.add('message-card', 'sent');
+                    newMessage.innerHTML = `
+                        <span class="sender">${data.sender.username}:</span>
+                        <span class="content">${data.content}</span>
+                        <span class="timestamp">${formatTimestamp(data.timestamp)}</span>
+                        ${data.sender.username === '{{ user.username }}' ? '<button class="delete-btn" data-id="' + data.id + '">حذف</button>' : ''}
+                    `;
+                    messagesList.appendChild(newMessage);
+                    
+                    // اسکرول به انتهای لیست
+                    scrollToBottom();
+        
+                    // پاک کردن محتوای textarea
+                    document.getElementById('content').value = '';
+                } else {
+                    console.error('خطا در ارسال پیام');
+                }
+            })
+            .catch((error) => console.error('Error:', error));
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.classList.contains('delete-btn')) {
+                const messageId = e.target.getAttribute('data-id');
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // اصلاح مسیر URL برای حذف پیام
+                fetch(`/api/messages/${messageId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // حذف پیام از DOM
+                        e.target.closest('.message-card').remove();
+                    } else {
+                        console.error('خطا در حذف پیام');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+        
+
+
+
+    </script>
+    
+
+
+
+    
+    
+   
+        
+    
+            
+
+               
+
+        
+        
+        
+        
+
+                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
